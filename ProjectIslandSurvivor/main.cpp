@@ -1,36 +1,30 @@
 #include "raylib.h"
 #include "raymath.h"
+#include "character.h"
+#include "prop.h"
+#include "enemy.h"
 
 int main()
 {
-    //Window dimension  
+    // Window dimension
     int windowDimensions[2];
     windowDimensions[0] = 384;
     windowDimensions[1] = 384;
 
-    InitWindow(windowDimensions[0],windowDimensions[1],"Island Survivor");
+    InitWindow(windowDimensions[0], windowDimensions[1], "Island Survivor");
 
     Texture2D worldMap = LoadTexture("map/WorldMap.png");
     Vector2 worldMapPos{0.0, 0.0};
-    float speed{4.0};
+    const float mapScale{4.f};
 
-    Texture2D knight_idle = LoadTexture("characters/knight_idle_spritesheet.png");
-    Texture2D knight_run = LoadTexture("characters/knight_run_spritesheet.png");
-    Texture2D knight{knight_idle};
+    Character knight{windowDimensions[0], windowDimensions[1]};
 
-    Vector2 knightPos {
-        windowDimensions[1]/2.0f - ((float)knight.width/2.0f/6.0f) * 4.0f,
-        windowDimensions[0]/2.0f - ((float)knight.height/2.0f) * 4.0f
+    Prop props[2]{
+        Prop{Vector2{600.f,300.f},LoadTexture("nature_tileset/Rock.png")},
+        Prop{Vector2{400.f,500.f},LoadTexture("nature_tileset/Log.png")}
     };
 
-    //1 facing right, -1 facing left
-    float rightLeft{1.f};
-
-    //animation variables
-    float runningTime{};
-    int frame{};
-    const int maxFrames{6};
-    const float updateTime{1.f/12.f};
+    Enemy goblin{Vector2{}, LoadTexture("characters/goblin_idle_spritesheet.png"), LoadTexture("characters/goblin_run_spritesheet.png")};
 
     SetTargetFPS(60);
     while (!WindowShouldClose())
@@ -38,47 +32,41 @@ int main()
         BeginDrawing();
         ClearBackground(WHITE);
 
-        Vector2 direction{};
-        if(IsKeyDown(KEY_A)) direction.x -= 1.0;
-        if(IsKeyDown(KEY_D)) direction.x += 1.0;
-        if(IsKeyDown(KEY_W)) direction.y -= 1.0;
-        if(IsKeyDown(KEY_S)) direction.y += 1.0;
+        worldMapPos = Vector2Scale(knight.getWorldPos(), -1.f);
 
-        if (Vector2Length(direction) != 0.0)
+        // DrawMap
+        DrawTextureEx(worldMap, worldMapPos, 0.0, mapScale, WHITE);
+
+        //DrawProps
+        for (auto prop : props)
         {
-            //set mapPos = mapPos - direction
-            
-            worldMapPos = Vector2Subtract(worldMapPos, Vector2Scale(Vector2Normalize(direction), speed));            
-            direction.x < 0.f ? rightLeft = -1.f : rightLeft = 1.f;
-            knight = knight_run;
+            prop.Render(knight.getWorldPos());
         }
-        else
+
+        // Character
+        knight.tick(GetFrameTime());
+
+        //Check Map Bounds
+        if (knight.getWorldPos().x < 0.f ||
+            knight.getWorldPos().y < 0.f ||
+            knight.getWorldPos().x + windowDimensions[0] > worldMap.width * mapScale ||
+            knight.getWorldPos().y + windowDimensions[1] > worldMap.height * mapScale)
         {
-            knight = knight_idle;
+            knight.undoMovement();
         }
-        
 
-        DrawTextureEx(worldMap, worldMapPos, 0.0, 4.0, WHITE);
+        for (auto prop : props)
+        {            
+            if (CheckCollisionRecs(prop.getCollisionRec(knight.getWorldPos()), knight.GetCollisionRec()))
+            {
+                knight.undoMovement();
+            } 
+        }    
 
-        //update animation frame
-        runningTime += GetFrameTime();
-        if (runningTime >= updateTime)
-        {
-            frame++;
+        //Enemy
+        goblin.tick(GetFrameTime());
 
-            runningTime = 0.f;
-
-            if (frame > maxFrames) frame = 0;
-        }
-        
-
-        //draw the character
-        Rectangle source{frame * (float)knight.width/6.f, 0.f, rightLeft * (float)knight.width/6.f, (float)knight.height};
-        Rectangle dest{knightPos.x, knightPos.y, 4.0f * (float)knight.width/6.0f, 4.0f * (float)knight.height};
-        DrawTexturePro(knight, source, dest, Vector2{}, 0.0, WHITE);
-
-
-        //Stop Drawing
+        // Stop Drawing
         EndDrawing();
     }
 
