@@ -25,6 +25,7 @@ int main()
     };
 
     Enemy goblin{Vector2{}, LoadTexture("characters/goblin_idle_spritesheet.png"), LoadTexture("characters/goblin_run_spritesheet.png")};
+    goblin.setTarget(&knight);
 
     SetTargetFPS(60);
     while (!WindowShouldClose())
