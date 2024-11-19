@@ -1,4 +1,5 @@
 #include "enemy.h"
+#include "raymath.h"
 
 Enemy::Enemy(Vector2 pos, Texture2D idle_texture, Texture2D run_texture)
 {
@@ -9,9 +10,17 @@ Enemy::Enemy(Vector2 pos, Texture2D idle_texture, Texture2D run_texture)
 
     width = texture.width / maxFrames;
     height = texture.height;
+    speed = 3.5f;
+}
+
+Vector2 Enemy::getScreenPos(){
+    return Vector2Subtract(worldPos, target->getWorldPos());
 }
 
 void Enemy::tick(float deltaTime)
 {
-    BaseCharacter::tick(deltaTime);
+    //get toTarget
+    velocity =  Vector2Subtract(target->getScreenPos(), getScreenPos());
+    
+    //BaseCharacter::tick(deltaTime);
 }
