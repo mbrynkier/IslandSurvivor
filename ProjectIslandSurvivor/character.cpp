@@ -18,6 +18,8 @@ Vector2 Character::getScreenPos()
 
 void Character::tick(float deltaTime)
 {
+    if (!getAlive()) return;
+    
     if (IsKeyDown(KEY_A))
         velocity.x -= 1.0;
     if (IsKeyDown(KEY_D))
@@ -37,7 +39,7 @@ void Character::tick(float deltaTime)
         origin = {0.f, weapon.height * scale};
         offset = {35.f, 55.f};
 
-        rotation = 35.f;
+        rotation = IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? 35.f : 0.f;
 
         weaponCollisionRec = {
             getScreenPos().x + offset.x,
@@ -45,13 +47,15 @@ void Character::tick(float deltaTime)
             weapon.width * scale,
             weapon.height * scale
         };
+
+        
     }
     else
     {
         origin = {weapon.width * scale, weapon.height * scale};
         offset = {25.f, 55.f};
 
-        rotation = -35.f;
+        rotation = IsMouseButtonDown(MOUSE_LEFT_BUTTON) ? -35.f : 0.f;
 
         weaponCollisionRec = {
             getScreenPos().x + offset.x - weapon.width * scale,
@@ -59,6 +63,7 @@ void Character::tick(float deltaTime)
             weapon.width * scale,
             weapon.height * scale
         };
+        
     }
     
 
@@ -68,8 +73,15 @@ void Character::tick(float deltaTime)
 
     DrawTexturePro(weapon, source, dest, origin, rotation, WHITE);
 
-    DrawRectangleLines(
-        weaponCollisionRec.x, weaponCollisionRec.y, weaponCollisionRec.width, weaponCollisionRec.height, RED
-    );
 }
 
+void Character::takeDamage(float damage)
+{
+    health -= damage;
+
+    if (health <= 0.f)
+    {
+        setAlive(false);
+    }
+    
+}
